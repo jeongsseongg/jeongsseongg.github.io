@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>One Day Posting</title>
+  <meta name="description" content="키워드 수집, AI 포스팅 생성, 저장목록, 블로그 발행 큐를 한 곳에서 관리하는 원데이포스팅">
+  <style>
+    *{box-sizing:border-box}
+    :root{--ink:#161616;--muted:#6f716b;--line:#e4e2d8;--paper:#fff;--bg:#f5f6f1;--gold:#9a7426;--green:#03c75a;--blue:#21759b;--orange:#eb531f}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",Arial,sans-serif}
+    button,input,select,textarea{font:inherit}
+    .top{height:68px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:10}
+    .brand{display:flex;align-items:center;gap:12px;font-weight:900}
+    .mark{width:38px;height:38px;border-radius:8px;background:#111;color:#fff;display:grid;place-items:center}
+    .brand small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+    .top-actions{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
+    .layout{display:grid;grid-template-columns:228px 1fr;min-height:calc(100vh - 68px)}
+    .side{background:#fff;border-right:1px solid var(--line);padding:20px}
+    .nav{display:grid;gap:8px}
+    .nav button{border:0;background:transparent;text-align:left;padding:12px 13px;border-radius:8px;font-weight:850;color:#555;cursor:pointer}
+    .nav button.active{background:#111;color:#fff}
+    .main{padding:26px;max-width:1280px}
+    .section{display:none}
+    .section.active{display:block}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .card{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:20px}
+    .card h1,.card h2,.card h3{margin:0 0 13px;line-height:1.25}
+    .label{font-size:11px;letter-spacing:.12em;color:var(--gold);font-weight:950;text-transform:uppercase;margin-bottom:8px}
+    .muted{color:var(--muted);font-size:13px;line-height:1.6}
+    .field{margin-bottom:13px}
+    .field label{display:block;font-size:13px;color:#50524d;font-weight:850;margin-bottom:6px}
+    input,select,textarea{width:100%;border:1px solid #d8d6cc;background:#fbfbf8;border-radius:8px;padding:11px 12px}
+    textarea{resize:vertical;min-height:92px}
+    .btns{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+    .btn{border:0;border-radius:8px;padding:11px 15px;font-weight:900;cursor:pointer}
+    .btn.primary{background:#111;color:#fff}
+    .btn.gold{background:var(--gold);color:#fff}
+    .btn.light{background:#eeece4;color:#222}
+    .btn:disabled{opacity:.45;cursor:not-allowed}
+    .badge{display:inline-flex;align-items:center;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:900}
+    .ok{background:#dcfce7;color:#166534}.warn{background:#fef3c7;color:#92400e}.off{background:#fee2e2;color:#991b1b}
+    .provider{border:1px solid var(--line);border-radius:8px;padding:14px;background:#fff}
+    .provider strong{display:block;margin-bottom:6px}
+    .provider ul{margin:8px 0 0;padding-left:18px;color:#555;font-size:13px}
+    .result-list{display:grid;gap:10px;max-height:390px;overflow:auto}
+    .item{border:1px solid #eceae0;border-radius:8px;background:#fff;padding:12px}
+    .item-title{font-weight:900;color:#111}
+    .post-preview{border:1px solid var(--line);background:#fff;border-radius:8px;padding:18px;max-height:560px;overflow:auto;line-height:1.75}
+    .saved-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start}
+    .platform-row{display:flex;align-items:center;gap:12px}
+    .platform-logo{width:42px;height:42px;border-radius:8px;display:grid;place-items:center;color:#fff;font-weight:950}
+    .wp{background:var(--blue)}.nv{background:var(--green)}.ts{background:var(--orange)}
+    .publish-targets{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0 16px}
+    .publish-targets label{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fbfbf8;border-radius:8px;padding:9px 11px;font-size:13px;font-weight:900}
+    .publish-targets input{width:auto}
+    .toast{position:fixed;right:22px;bottom:22px;background:#111;color:#fff;border-radius:8px;padding:13px 17px;font-weight:850;opacity:0;transform:translateY(8px);transition:.2s;z-index:99}
+    .toast.show{opacity:1;transform:none}
+    @media(max-width:860px){.layout{grid-template-columns:1fr}.side{position:sticky;top:68px;z-index:9;padding:10px;overflow:auto}.nav{display:flex}.nav button{white-space:nowrap}.main{padding:15px}.grid,.grid3{grid-template-columns:1fr}.top{padding:0 14px}.brand small{display:none}.top-actions{gap:6px}.publish-targets label{flex:1;justify-content:center}}
+  </style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <div class="mark">1D</div>
+    <div>One Day Posting<small>키워드 수집 + AI 생성 + 저장목록 + 발행 큐</small></div>
+  </div>
+  <div class="top-actions">
+    <span class="badge warn">GitHub Pages</span>
+    <span id="profileName">방문자</span>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="side">
+    <div class="nav">
+      <button class="active" data-tab="studio" onclick="showTab('studio')">키워드 + 자동발행</button>
+      <button data-tab="keys" onclick="showTab('keys')">AI API 키</button>
+      <button data-tab="saved" onclick="showTab('saved')">내 저장목록</button>
+      <button data-tab="platforms" onclick="showTab('platforms')">발행 채널</button>
+      <button data-tab="supabase" onclick="showTab('supabase')">Supabase 준비</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <section id="studio" class="section active">
+      <div class="grid">
+        <div class="card">
+          <div class="label">Content Studio</div>
+          <h1>어떤 포스팅을 만들까요?</h1>
+          <div class="grid">
+            <div class="field"><label>카테고리</label><select id="category"><option>시계 매입</option><option>명품 시계</option><option>롤렉스</option><option>오메가</option><option>까르띠에</option><option>브랜드 시세</option><option>정보성 글</option><option>후기/리뷰</option></select></div>
+            <div class="field"><label>AI 제공자</label><select id="provider"><option value="claude">Claude</option><option value="openai">GPT</option><option value="gemini">Gemini</option></select></div>
+          </div>
+          <div class="field"><label>핵심 키워드</label><input id="keyword" placeholder="예: 롤렉스 서브마리너 매입"></div>
+          <div class="field"><label>포스팅 목적</label><input id="intent" placeholder="예: 매입 상담 유도, 정보성 가이드, 후기형 글"></div>
+          <div class="field"><label>대상 독자</label><input id="audience" placeholder="예: 명품시계를 판매하려는 30~50대"></div>
+          <div class="field"><label>사용자가 원하는 내용</label><textarea id="userRequest" placeholder="꼭 들어갈 내용, 금지 표현, 강조할 점을 적으세요."></textarea></div>
+          <div class="field"><label>기사/관련글/이미지 메모</label><textarea id="notes" placeholder="관련 URL, 기사 요약, 이미지 방향, 실제 상담 사례를 넣으세요."></textarea></div>
+          <div class="btns">
+            <button class="btn gold" onclick="collectResearch()">자료 수집안 만들기</button>
+            <button class="btn primary" onclick="generatePost()">글 생성 + 저장</button>
+          </div>
+          <p class="muted">현재 GitHub Pages 버전은 정적 프론트입니다. Supabase 연결 전까지 데이터는 이 브라우저에 저장됩니다.</p>
+        </div>
+
+        <div class="card">
+          <div class="label">Collected Data</div>
+          <h2>수집 데이터</h2>
+          <div id="researchBox" class="muted">키워드를 입력하고 자료 수집안을 만들면 기사, 관련글, 이미지 수집 방향이 정리됩니다.</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <div class="label">Generated Post</div>
+        <div class="saved-row">
+          <h2 id="currentTitle">아직 생성된 글이 없습니다</h2>
+          <div class="btns">
+            <button class="btn light" onclick="saveCurrentPost()">현재 글 저장</button>
+            <button class="btn primary" onclick="queueCurrentPost()">발행 큐 추가</button>
+          </div>
+        </div>
+        <div class="publish-targets">
+          <label><input type="checkbox" name="publishPlatform" value="naver" checked> 네이버</label>
+          <label><input type="checkbox" name="publishPlatform" value="wordpress"> WordPress</label>
+          <label><input type="checkbox" name="publishPlatform" value="tistory"> 티스토리</label>
+          <label><input type="checkbox" id="draftMode"> 비공개/임시저장</label>
+        </div>
+        <div id="currentBody" class="post-preview muted">생성 결과가 여기에 표시됩니다.</div>
+      </div>
+    </section>
+
+    <section id="keys" class="section">
+      <div class="card">
+        <div class="label">AI API Keys</div>
+        <h2>사용자 API 키 직접 입력</h2>
+        <p class="muted">GitHub Pages에서는 서버가 없으므로 API 키는 임시로 브라우저 localStorage에만 저장됩니다. 실서비스에서는 Supabase Edge Function 또는 서버에서 암호화 저장해야 합니다.</p>
+        <div class="grid3" id="providerInfo"></div>
+        <div class="grid" style="margin-top:18px">
+          <div class="field"><label>Claude API Key</label><input id="keyClaude" type="password" placeholder="sk-ant-..."></div>
+          <div class="field"><label>Claude Model</label><input id="modelClaude" value="claude-sonnet-4-20250514"></div>
+          <div class="field"><label>GPT API Key</label><input id="keyOpenai" type="password" placeholder="sk-..."></div>
+          <div class="field"><label>GPT Model</label><input id="modelOpenai" value="gpt-4.1-mini"></div>
+          <div class="field"><label>Gemini API Key</label><input id="keyGemini" type="password" placeholder="AIza..."></div>
+          <div class="field"><label>Gemini Model</label><input id="modelGemini" value="gemini-1.5-flash"></div>
+        </div>
+        <div class="field"><label>기본 AI</label><select id="defaultProvider"><option value="claude">Claude</option><option value="openai">GPT</option><option value="gemini">Gemini</option></select></div>
+        <button class="btn primary" onclick="saveAiSettings()">API 키 저장</button>
+      </div>
+    </section>
+
+    <section id="saved" class="section">
+      <div class="card">
+        <div class="label">Saved Posts</div>
+        <h2>내 저장목록</h2>
+        <div id="savedList" class="result-list"></div>
+      </div>
+    </section>
+
+    <section id="platforms" class="section">
+      <div class="grid3">
+        <div class="card platform-row"><div class="platform-logo wp">WP</div><div><h3>WordPress</h3><span class="badge warn">API 연결 예정</span><p class="muted">REST API 발행은 Supabase/서버 연결 후 바로 자동화 가능</p></div></div>
+        <div class="card platform-row"><div class="platform-logo nv">N</div><div><h3>네이버 블로그</h3><span class="badge warn">에이전트 필요</span><p class="muted">웹 로그인 세션이 필요하므로 PC/VPS 발행 에이전트 권장</p></div></div>
+        <div class="card platform-row"><div class="platform-logo ts">T</div><div><h3>티스토리</h3><span class="badge warn">에이전트 필요</span><p class="muted">카카오 로그인 기반 웹 발행 에이전트로 처리</p></div></div>
+      </div>
+    </section>
+
+    <section id="supabase" class="section">
+      <div class="grid">
+        <div class="card">
+          <div class="label">Supabase</div>
+          <h2>연동 준비</h2>
+          <div class="field"><label>Supabase URL</label><input id="supabaseUrl" placeholder="https://xxxx.supabase.co"></div>
+          <div class="field"><label>Supabase Anon Key</label><input id="supabaseAnon" placeholder="public anon key"></div>
+          <button class="btn primary" onclick="saveSupabaseConfig()">설정 저장</button>
+          <p class="muted">서비스 롤 키는 절대 GitHub Pages에 넣으면 안 됩니다. 서버 또는 Edge Function 환경변수에만 둬야 합니다.</p>
+        </div>
+        <div class="card">
+          <div class="label">Next Build</div>
+          <h2>다음 구현 순서</h2>
+          <div class="result-list">
+            <div class="item"><div class="item-title">1. Supabase Auth 연결</div><div class="muted">사용자 로그인과 저장목록을 계정 단위로 분리</div></div>
+            <div class="item"><div class="item-title">2. Edge Function 추가</div><div class="muted">AI API 키 암호화, 글 생성, 수집 API 호출을 브라우저 밖에서 처리</div></div>
+            <div class="item"><div class="item-title">3. 발행 큐 테이블</div><div class="muted">WordPress는 API, 네이버/티스토리는 에이전트가 큐를 처리</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORE = "one-day-posting-pages";
+const providerInfo = {
+  claude: { name:"Claude", model:"claude-sonnet-4-20250514", strengths:["긴 글 구조화", "한국어 문장 안정성", "브랜드 톤 유지", "과장 표현 억제"] },
+  openai: { name:"GPT", model:"gpt-4.1-mini", strengths:["빠른 초안", "요약/분류/추출", "도구형 워크플로우", "형식 변환"] },
+  gemini: { name:"Gemini", model:"gemini-1.5-flash", strengths:["자료 요약", "이미지 맥락 확장", "넓은 리서치 보조", "빠른 비교"] }
+};
+let state = loadState();
+let currentPost = null;
+let currentResearch = null;
+
+function loadState(){
+  try{return JSON.parse(localStorage.getItem(STORE)) || {posts:[], queue:[], ai:{keys:{},models:{},default_provider:"claude"}, supabase:{}}}
+  catch{return {posts:[], queue:[], ai:{keys:{},models:{},default_provider:"claude"}, supabase:{}}}
+}
+function saveState(){localStorage.setItem(STORE, JSON.stringify(state))}
+function esc(v=""){return String(v).replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s]))}
+function toast(msg,error=false){const el=document.getElementById("toast");el.textContent=msg;el.style.background=error?"#b91c1c":"#111";el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2600)}
+function showTab(id){document.querySelectorAll(".section").forEach(s=>s.classList.toggle("active",s.id===id));document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===id));if(id==="saved")loadSavedPosts()}
+function studioPayload(){return{category:val("category"),provider:val("provider"),keyword:val("keyword").trim(),intent:val("intent").trim(),audience:val("audience").trim(),user_request:val("userRequest").trim(),notes:val("notes").trim()}}
+function val(id){return document.getElementById(id).value}
+function selectedPlatforms(){const v=[...document.querySelectorAll('input[name="publishPlatform"]:checked')].map(x=>x.value);return [...new Set(v)].length?[...new Set(v)]:["naver"]}
+
+function collectResearch(){
+  const d=studioPayload();
+  if(!d.keyword)return toast("핵심 키워드를 입력하세요",true);
+  currentResearch={
+    keyword:d.keyword,
+    category:d.category,
+    suggestions:[
+      `${d.keyword} 핵심 기준 정리`,
+      `${d.keyword} 전 확인할 체크리스트`,
+      `${d.keyword} 실제 상담/구매자가 궁금해하는 질문`,
+      `${d.keyword} 실패하지 않는 선택법`
+    ],
+    articles:[
+      {title:`${d.keyword} 시장 흐름 요약`,summary:"최근 가격, 수요, 상태 기준을 비교해 글의 첫 문단에서 답을 제시합니다."},
+      {title:`${d.keyword} 관련 검색 의도`,summary:"후기형, 가격형, 방법형 검색 의도를 나눠 제목과 소제목에 반영합니다."},
+      {title:"사용자 메모 기반 차별화",summary:d.notes || "실제 상담 경험, 사진 확인 기준, 금지 표현을 본문에 반영합니다."}
+    ],
+    images:[
+      `${d.keyword} 대표 이미지`,
+      `${d.keyword} 상태 비교 이미지`,
+      `${d.keyword} 체크리스트 이미지`
+    ]
+  };
+  renderResearch(currentResearch);
+}
+function renderResearch(r){
+  document.getElementById("researchBox").innerHTML=`
+    <h3>${esc(r.keyword)} 수집 방향</h3>
+    <div class="result-list">${r.articles.map(x=>`<div class="item"><div class="item-title">${esc(x.title)}</div><div class="muted">${esc(x.summary)}</div></div>`).join("")}</div>
+    <h3 style="margin-top:14px">제안 주제</h3>
+    <div class="result-list">${r.suggestions.map(x=>`<div class="item">${esc(x)}</div>`).join("")}</div>`;
+}
+function generatePost(){
+  const d=studioPayload();
+  if(!d.keyword)return toast("핵심 키워드를 입력하세요",true);
+  if(!currentResearch)collectResearch();
+  const title=`${d.keyword} 전 확인할 핵심 기준`;
+  const body=`
+    <p><strong>${esc(d.keyword)}</strong>를 고민하는 사람에게 가장 중요한 기준은 가격 하나가 아니라 상태, 구성품, 시장 수요, 발행 채널별 신뢰도입니다.</p>
+    <h3>먼저 확인할 것</h3>
+    <ul>
+      <li>모델명과 연식이 실제 수요와 맞는지 확인합니다.</li>
+      <li>박스, 보증서, 여분 링크 등 구성품 유무를 분리해서 봅니다.</li>
+      <li>사진만으로 단정하지 말고 실물 상태와 수리 이력을 확인합니다.</li>
+    </ul>
+    <h3>관련 자료를 글에 반영하는 방식</h3>
+    <p>${esc(d.notes || "기사, 관련글, 이미지 후보를 모아 핵심 기준과 사용자 질문 중심으로 재구성합니다.")}</p>
+    <h3>상담 전 체크리스트</h3>
+    <ol>
+      <li>브랜드와 모델명을 정확히 적습니다.</li>
+      <li>구성품 사진과 시계 상태 사진을 준비합니다.</li>
+      <li>원하는 거래 방식과 희망 일정을 정합니다.</li>
+    </ol>
+    <p>${esc(d.user_request || "필요하다면 사진 기준으로 1차 확인 후 상담으로 이어지는 흐름을 제안합니다.")}</p>`;
+  currentPost={id:crypto.randomUUID(),title,body,category:d.category,keyword:d.keyword,provider:d.provider,status:"saved",created_at:Date.now(),research:currentResearch};
+  document.getElementById("currentTitle").textContent=title;
+  document.getElementById("currentBody").innerHTML=body;
+  saveCurrentPost();
+}
+function saveCurrentPost(){
+  if(!currentPost)return toast("저장할 글이 없습니다",true);
+  const idx=state.posts.findIndex(p=>p.id===currentPost.id);
+  if(idx>=0)state.posts[idx]=currentPost;else state.posts.unshift(currentPost);
+  saveState();loadSavedPosts();toast("저장목록에 저장했습니다");
+}
+function queueCurrentPost(){
+  if(!currentPost)return toast("발행할 글이 없습니다",true);
+  state.queue.unshift({id:crypto.randomUUID(),post_id:currentPost.id,title:currentPost.title,platforms:selectedPlatforms(),draft:document.getElementById("draftMode").checked,status:"queued",created_at:Date.now()});
+  saveState();toast("발행 큐에 추가했습니다");
+}
+function loadSavedPosts(){
+  const box=document.getElementById("savedList");
+  const queueCount=state.queue.length;
+  box.innerHTML=`
+    <div class="item"><div class="item-title">발행 큐 ${queueCount}건</div><div class="muted">Supabase/에이전트 연결 후 이 큐를 실제 발행 작업으로 처리합니다.</div></div>
+    ${state.posts.map(p=>`<div class="item saved-row"><div><button class="btn light" onclick="openSaved('${p.id}')">보기</button> <span class="item-title">${esc(p.title)}</span><div class="muted">${esc(p.category)} · ${esc(p.keyword)} · ${new Date(p.created_at).toLocaleString("ko-KR")}</div></div><div class="btns"><button class="btn primary" onclick="queueSaved('${p.id}')">큐 추가</button></div></div>`).join("") || '<div class="item muted">저장된 글이 없습니다.</div>'}`;
+}
+function openSaved(id){
+  const p=state.posts.find(x=>x.id===id);if(!p)return;
+  currentPost=p;currentResearch=p.research;
+  document.getElementById("currentTitle").textContent=p.title;
+  document.getElementById("currentBody").innerHTML=p.body;
+  showTab("studio");
+}
+function queueSaved(id){const p=state.posts.find(x=>x.id===id);if(!p)return;currentPost=p;queueCurrentPost()}
+function saveAiSettings(){
+  state.ai={default_provider:val("defaultProvider"),keys:{claude:val("keyClaude"),openai:val("keyOpenai"),gemini:val("keyGemini")},models:{claude:val("modelClaude"),openai:val("modelOpenai"),gemini:val("modelGemini")}};
+  saveState();renderProviders();toast("브라우저에 API 설정을 저장했습니다");
+}
+function renderProviders(){
+  const ai=state.ai||{};
+  document.getElementById("defaultProvider").value=ai.default_provider||"claude";
+  document.getElementById("provider").value=ai.default_provider||"claude";
+  document.getElementById("providerInfo").innerHTML=Object.entries(providerInfo).map(([id,p])=>`<div class="provider"><strong>${p.name} ${ai.keys?.[id]?'<span class="badge ok">저장됨</span>':'<span class="badge warn">필요</span>'}</strong><ul>${p.strengths.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`).join("");
+  document.getElementById("modelClaude").value=ai.models?.claude||providerInfo.claude.model;
+  document.getElementById("modelOpenai").value=ai.models?.openai||providerInfo.openai.model;
+  document.getElementById("modelGemini").value=ai.models?.gemini||providerInfo.gemini.model;
+}
+function saveSupabaseConfig(){
+  state.supabase={url:val("supabaseUrl"),anon:val("supabaseAnon")};
+  saveState();toast("Supabase 설정을 저장했습니다");
+}
+function init(){
+  renderProviders();loadSavedPosts();
+  document.getElementById("supabaseUrl").value=state.supabase?.url||"";
+  document.getElementById("supabaseAnon").value=state.supabase?.anon||"";
+}
+init();
+</script>
+</body>
+</html>
